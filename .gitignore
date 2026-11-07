@@ -1,0 +1,11 @@
+node_modules
+dist
+*.local
+docs/rapport/*.aux
+docs/rapport/*.log
+docs/rapport/*.toc
+docs/rapport/*.out
+docs/rapport/*.fls
+docs/rapport/*.fdb_latexmk
+
+.claude

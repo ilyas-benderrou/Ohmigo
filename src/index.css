@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+/* Charte Ohmigo : bleu électrique, accent jaune pour le courant, orange (pas rouge) pour l'erreur, vert pour la réussite. */
+@theme {
+  --font-sans: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-brand-50: #eef4ff;
+  --color-brand-100: #dbe6ff;
+  --color-brand-200: #bfd3ff;
+  --color-brand-300: #93b4ff;
+  --color-brand-400: #5f8cff;
+  --color-brand-500: #2f6bff;
+  --color-brand-600: #1f55f0;
+  --color-brand-700: #1843c4;
+  --color-brand-800: #17389b;
+  --color-brand-900: #142f73;
+  --color-current: #facc15;
+  --color-current-soft: #fef9c3;
+  --color-warn-50: #fff7ed;
+  --color-warn-100: #ffedd5;
+  --color-warn-500: #f97316;
+  --color-warn-700: #c2410c;
+  --color-ok-50: #ecfdf5;
+  --color-ok-100: #d1fae5;
+  --color-ok-500: #10b981;
+  --color-ok-700: #047857;
+  --color-ink: #0f172a;
+  --animate-pop: pop 0.45s ease-out;
+  --animate-fade: fade 0.35s ease-out;
+  --animate-flow: flow 0.9s linear infinite;
+
+  @keyframes pop {
+    0% { transform: scale(0.6); opacity: 0; }
+    70% { transform: scale(1.08); opacity: 1; }
+    100% { transform: scale(1); }
+  }
+  @keyframes fade {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+  }
+  @keyframes flow {
+    to { stroke-dashoffset: -24; }
+  }
+}
+
+html,
+body {
+  background: #f5f7fb;
+  color: var(--color-ink);
+  -webkit-text-size-adjust: 100%;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brand-400);
+  outline-offset: 2px;
+}
+
+.pop-in {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: var(--animate-pop);
+}
+
+.current-flow {
+  stroke-dasharray: 6 18;
+  animation: var(--animate-flow);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

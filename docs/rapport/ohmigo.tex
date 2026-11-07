@@ -1,0 +1,727 @@
+% ============================================================================
+% Ohmigo — Rapport technique
+% Compilation : latexmk -pdf ohmigo.tex   (ou pdflatex deux fois)
+% ============================================================================
+\documentclass[11pt,a4paper]{report}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[french]{babel}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{csquotes}
+\usepackage{xcolor}
+\usepackage{booktabs,tabularx,array,longtable}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{siunitx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes.geometric,babel}
+\usepackage[european resistors]{circuitikz}
+\usepackage[french,ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+
+\sisetup{output-decimal-marker={,}, group-separator={\,}}
+
+% --- Couleurs de la charte Ohmigo -------------------------------------------
+\definecolor{ohmblue}{HTML}{1F55F0}
+\definecolor{ohmdark}{HTML}{142F73}
+\definecolor{ohmyellow}{HTML}{FACC15}
+\definecolor{ohmorange}{HTML}{F97316}
+\definecolor{ohmgreen}{HTML}{10B981}
+\definecolor{codebg}{HTML}{F5F7FB}
+
+\titleformat{\chapter}[hang]{\normalfont\huge\bfseries\color{ohmdark}}{\thechapter}{0.6em}{}
+\titlespacing*{\chapter}{0pt}{0pt}{1.2em}
+\titleformat{\section}{\normalfont\Large\bfseries\color{ohmblue}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\large\bfseries}{\thesubsection}{0.6em}{}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{ohmdark}Ohmigo — rapport technique}
+\fancyhead[R]{\small\leftmark}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{codebg},
+  frame=single, rulecolor=\color{black!15},
+  breaklines=true, columns=fullflexible,
+  keywordstyle=\color{ohmblue}\bfseries,
+  commentstyle=\color{black!55}\itshape,
+  literate={é}{{\'e}}1 {è}{{\`e}}1 {à}{{\`a}}1 {ê}{{\^e}}1 {ç}{{\c c}}1 {É}{{\'E}}1 {î}{{\^\i}}1 {ô}{{\^o}}1,
+}
+\lstdefinelanguage{TypeScript}{
+  keywords={type,interface,const,let,function,return,if,else,for,export,import,from,switch,case,number,string,boolean},
+  sensitive=true, comment=[l]{//}, morecomment=[s]{/*}{*/}, string=[b]', morestring=[b]",
+}
+
+\newcommand{\req}{R_{eq}}
+\newcommand{\para}{\mathbin{/\!/}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\ohmigo}{\textsc{Ohmigo}}
+
+\begin{document}
+
+% ============================================================================
+% Page de titre
+% ============================================================================
+\begin{titlepage}
+  \centering
+  \vspace*{1.5cm}
+  \begin{tikzpicture}
+    \fill[ohmblue] (0,0) circle (1.6);
+    \draw[white, line width=4pt, line cap=round, line join=round]
+      (-1.05,-0.95) -- (-0.4,-0.95) -- (-0.4,-0.6)
+      .. controls (-1.1,-0.35) and (-1.15,0.95) .. (0,0.95)
+      .. controls (1.15,0.95) and (1.1,-0.35) .. (0.4,-0.6)
+      -- (0.4,-0.95) -- (1.05,-0.95);
+    \fill[white] (-0.28,0.25) circle (0.1) (0.28,0.25) circle (0.1);
+    \draw[ohmyellow, line width=2pt, line cap=round] (-0.28,-0.12) .. controls (-0.1,-0.3) and (0.1,-0.3) .. (0.28,-0.12);
+  \end{tikzpicture}
+
+  \vspace{1cm}
+  {\Huge\bfseries\color{ohmdark} Ohmigo\par}
+  \vspace{0.4cm}
+  {\Large Ton compagnon intelligent pour maîtriser les résistances\par}
+  \vspace{1.2cm}
+  {\large Application web éducative et adaptative pour le calcul\\ de la résistance équivalente (bac STE / STM)\par}
+  \vspace{1.5cm}
+  {\large\bfseries Rapport technique\par}
+  \vfill
+  {\large Master « Système éducatif intelligent et communicant »\\ École Normale Supérieure de Fès\par}
+  \vspace{0.8cm}
+  {Réalisé par : \textit{à compléter}\par}
+  {Encadré par : \textit{à compléter}\par}
+  \vspace{0.6cm}
+  {Année universitaire 2026–2027\par}
+\end{titlepage}
+
+% ============================================================================
+\begin{abstract}
+\ohmigo{} est une application web éducative destinée aux élèves du lycée technique (bac STE / STM). Elle porte sur une notion précise du programme : le calcul de la résistance équivalente de montages série, parallèle, mixtes et de cas particuliers (court-circuit, pont de Wheatstone, réseau en échelle, problème inverse).
+
+L'élève ne reçoit jamais d'énoncé qui lui dit quel est le montage : il analyse des \emph{schémas} générés par programme. Il simplifie le circuit étape par étape, en sélectionnant des résistances, en choisissant « série » ou « parallèle » et en calculant leur résistance équivalente. Le schéma se redessine à chaque étape.
+
+L'« intelligence » du système repose sur deux éléments : un \emph{diagnostic} des erreurs, qui en distingue douze types (E0 à E11), et le \emph{choix de l'aide} adaptée. Cette aide est progressive : indice, puis micro-vidéo et exercice de remédiation, puis alerte au professeur. Elle est complétée par un modèle de l'apprenant à six compétences et par des règles d'adaptation du niveau. Un tableau de bord permet au professeur de suivre chaque élève et la classe, et d'exporter les données pour l'expérimentation.
+
+Le rapport décrit les principes pédagogiques, l'architecture, le moteur de circuits (fractions exactes, analyse nodale, rendu SVG), la banque d'exercices, le diagnostic, l'adaptation et la validation par des tests automatisés.
+\end{abstract}
+
+\tableofcontents
+
+% ============================================================================
+\chapter{Introduction}
+% ============================================================================
+
+\section{Contexte}
+Le calcul de la résistance équivalente est une compétence de base en électricité au lycée technique. Sur le papier, les deux lois sont simples :
+\begin{equation}
+  \req^{\text{série}} = \sum_{i=1}^{n} R_i,
+  \qquad
+  \frac{1}{\req^{\text{parallèle}}} = \sum_{i=1}^{n} \frac{1}{R_i}.
+\end{equation}
+Dans la pratique, les élèves butent sur trois points :
+\begin{itemize}
+  \item reconnaître le type de montage sur un schéma, surtout lorsqu'il est dessiné de façon inhabituelle ;
+  \item décomposer un circuit mixte dans le bon ordre ;
+  \item calculer avec des fractions sans oublier l'inversion finale.
+\end{itemize}
+Les erreurs sont récurrentes et assez bien typées, ce qui en fait un bon terrain pour un système tutoriel qui \emph{diagnostique} l'erreur au lieu de juger seulement la réponse finale.
+
+\section{Objectifs}
+\begin{enumerate}[label=\textbf{O\arabic*.}]
+  \item Faire travailler l'analyse de \emph{schémas} électriques de difficulté croissante (facile, moyen, difficile).
+  \item Faire résoudre étape par étape, en enregistrant chaque action pour le diagnostic.
+  \item Identifier le type d'erreur et y répondre de façon ciblée et progressive.
+  \item Adapter le parcours au profil de chaque élève (modèle de l'apprenant).
+  \item Fournir au professeur un tableau de bord et des données exploitables pour le mémoire.
+\end{enumerate}
+
+\section{Organisation du rapport}
+Le chapitre~\ref{ch:pedago} expose les principes pédagogiques. Le chapitre~\ref{ch:archi} présente l'architecture. Les chapitres~\ref{ch:moteur} à~\ref{ch:adapt} détaillent le moteur de circuits, la banque d'exercices, le diagnostic et l'adaptation. Le chapitre~\ref{ch:prof} décrit l'espace professeur, le chapitre~\ref{ch:valid} la validation, et le chapitre~\ref{ch:persp} les limites et perspectives.
+
+% ============================================================================
+\chapter{Principes pédagogiques}\label{ch:pedago}
+% ============================================================================
+
+\section{Les principes retenus}
+Neuf principes, fixés avec l'équipe pédagogique, guident toute la conception :
+\begin{enumerate}
+  \item \textbf{Ne jamais donner la réponse finale}, même après plusieurs erreurs.
+  \item \textbf{Les exercices sont des schémas} : l'élève reconnaît lui-même le type de montage. Aucun énoncé ne dit « $R_1$ et $R_2$ sont en série ».
+  \item \textbf{Valeurs aléatoires} à chaque nouvel exercice : jamais deux fois le même exercice avec les mêmes valeurs.
+  \item \textbf{Résultats « propres »} : $\req$ tombe juste (\SI{2}{\ohm}, \SI{3.6}{\ohm}), jamais \SI{2.857}{\ohm}.
+  \item \textbf{Aide progressive} (\emph{scaffolding}) : indice d'abord, vidéo ensuite, professeur en dernier.
+  \item \textbf{Feedback positif et précis} : « Ta méthode est juste, revérifie le calcul des fractions » plutôt que « Faux ».
+  \item Ni note négative visible, ni classement entre élèves.
+  \item L'élève ne reste jamais bloqué : après trois échecs sur la même erreur, le professeur est alerté et l'élève revient au niveau précédent.
+  \item \textbf{Le contenu pédagogique est rédigé et validé par l'équipe.} L'intelligence du système porte sur le diagnostic et le choix de l'aide, pas sur la génération de texte.
+\end{enumerate}
+
+\section{Les six compétences}
+\begin{center}
+\begin{tabular}{>{\bfseries}ll}
+  \toprule
+  Code & Compétence \\
+  \midrule
+  C1 & Identifier le type de montage \\
+  C2 & Calculer en série \\
+  C3 & Calculer en parallèle \\
+  C4 & Décomposer un circuit mixte \\
+  C5 & Cas particuliers (court-circuit, pont, échelle) \\
+  C6 & Problème inverse \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\section{Parcours de l'élève}
+\begin{enumerate}
+  \item \textbf{Accueil} : niveau atteint, compétences en barres de couleur (orange, jaune, vert), messages du professeur.
+  \item \textbf{Vidéo d'introduction} d'environ une minute, en deux segments : série (0:00--0:30) et parallèle (0:30--1:00). Le lecteur a des chapitres et peut lancer un seul segment.
+  \item \textbf{Question de compréhension} : un schéma simple, série ou parallèle ? En cas d'erreur, seul le segment concerné est rejoué.
+  \item \textbf{Exercices} adaptatifs (chapitres~\ref{ch:moteur} à~\ref{ch:adapt}).
+  \item \textbf{Bilan} de séance : niveaux validés, compétences travaillées, erreurs corrigées.
+\end{enumerate}
+
+% ============================================================================
+\chapter{Architecture}\label{ch:archi}
+% ============================================================================
+
+\section{Choix technologiques}
+\begin{itemize}
+  \item \textbf{React + TypeScript} (outil de construction \textbf{Vite}), styles avec \textbf{Tailwind CSS} ;
+  \item schémas en \textbf{SVG} générés par code (aucune image statique) ;
+  \item formules affichées en \LaTeX{} grâce à \textbf{KaTeX} ;
+  \item tests automatisés avec \textbf{Vitest} ;
+  \item aucune dépendance serveur en V1 : l'application s'installe avec \code{npm install} et se lance avec \code{npm run dev}, sous Windows comme ailleurs.
+\end{itemize}
+
+\section{Organisation en couches}
+Le code sépare strictement l'interface, le moteur et les données (figure~\ref{fig:archi}). Le moteur est écrit en TypeScript pur, sans React. Il est donc testable isolément.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw=ohmblue, rounded corners, fill=ohmblue!6, minimum width=3.6cm, minimum height=1.1cm, align=center, font=\small},
+  data/.style={box, draw=ohmgreen, fill=ohmgreen!8},
+  cont/.style={box, draw=ohmorange, fill=ohmorange!8},
+  arr/.style={-{Stealth[length=2.5mm]}, thick, black!60},
+  node distance=1.1cm and 1.2cm]
+  \node[box] (ui) {Interface React\\ \scriptsize pages, composants, \code{CircuitView}};
+  \node[box, below=of ui] (engine) {Moteur (\code{src/engine})\\ \scriptsize circuits, diagnostic, adaptation};
+  \node[cont, right=of engine] (content) {Contenu validé\\ \scriptsize erreurs, vidéos, gabarits};
+  \node[data, below=of engine] (repo) {Interface \code{Repository}};
+  \node[data, below left=0.9cm and -0.6cm of repo] (ls) {localStorage (V1)\\ \scriptsize + données de démo};
+  \node[data, below right=0.9cm and -0.6cm of repo, dashed] (fb) {Firebase (V2)\\ \scriptsize Auth + Firestore};
+  \draw[arr] (ui) -- (engine);
+  \draw[arr] (engine) -- (content);
+  \draw[arr] (ui.east) -| (content.north);
+  \draw[arr] (ui.west) -- ++(-1.1,0) |- (repo.west);
+  \draw[arr] (repo) -- (ls);
+  \draw[arr, dashed] (repo) -- (fb);
+\end{tikzpicture}
+\caption{Architecture en couches d'\ohmigo.}\label{fig:archi}
+\end{figure}
+
+\section{Couche de données abstraite}
+Toutes les lectures et écritures passent par une interface \code{Repository}, définie dans le fichier \code{src/data/repository.ts}. Elle couvre les élèves, les tentatives, les alertes, les messages, les vues de vidéos et les réglages. L'implémentation V1 stocke tout dans le \code{localStorage} du navigateur et crée des données de démonstration au premier lancement. Le passage à Firebase (V2) consiste à écrire une autre implémentation de la même interface, sans toucher au reste du code.
+
+\section{Données personnelles}
+Les élèves sont mineurs : seuls le \emph{prénom}, le \emph{nom} et la \emph{classe} sont stockés. Il n'y a pas de mot de passe élève en V1. L'espace professeur est protégé par un code PIN modifiable.
+
+% ============================================================================
+\chapter{Le moteur de circuits}\label{ch:moteur}
+% ============================================================================
+
+\section{Représentation par un arbre série-parallèle}
+Un circuit « classique » se représente par un arbre dont les feuilles sont des résistances et les nœuds internes des associations série ($S$) ou parallèle ($P$) :
+\begin{lstlisting}[language=TypeScript]
+type Node =
+  | { kind: 'R'; id: string; label: string; value: Frac | 'unknown' }
+  | { kind: 'W'; id: string }                       // fil : résistance nulle
+  | { kind: 'S'; id: string; children: Node[] }     // série
+  | { kind: 'P'; id: string; children: Node[] };    // parallèle
+\end{lstlisting}
+La feuille $W$ (fil) permet de représenter un court-circuit : une résistance court-circuitée est simplement en parallèle avec un fil. L'inconnue d'un problème inverse est une résistance de valeur \code{'unknown'}.
+
+\paragraph{Exemple.} Le circuit de référence M1 (figure~\ref{fig:m1}) s'écrit $S\big(P(S(R_1,R_2),R_3),R_4\big)$.
+
+\begin{figure}[ht]
+\centering
+\begin{circuitikz}[scale=0.85, transform shape]
+  \draw (0,0) node[ocirc, label=left:$A$] {} -- (1,0) node[circ] {};
+  \draw (1,0) -- (1,1) to[R, l=$R_1$] (3,1) to[R, l=$R_2$] (5,1) -- (5,0) node[circ] {};
+  \draw (1,0) -- (1,-1) to[R, l_=$R_3$] (5,-1) -- (5,0);
+  \draw (5,0) to[R, l=$R_4$] (7,0) node[ocirc, label=right:$B$] {};
+\end{circuitikz}
+\caption{Gabarit M1 : $(R_1 + R_2) \para R_3$, puis en série avec $R_4$.}\label{fig:m1}
+\end{figure}
+
+\section{Calcul exact par fractions}
+Les flottants donnent des résultats comme $0{,}1 + 0{,}2 \neq 0{,}3$. Le moteur utilise donc des \textbf{fractions exactes} $\frac{n}{d}$, réduites, avec $d > 0$. La résistance équivalente se calcule récursivement :
+\begin{equation}
+  \req(N) =
+  \begin{cases}
+    R & \text{si } N = R,\\
+    0 & \text{si } N = W,\\
+    \displaystyle\sum_{c \in N} \req(c) & \text{si } N = S(\dots),\\[3mm]
+    \displaystyle\Big(\sum_{c \in N} \frac{1}{\req(c)}\Big)^{-1} & \text{si } N = P(\dots) \text{ et aucune branche n'est nulle},\\[3mm]
+    0 & \text{si } N = P(\dots) \text{ contient une branche nulle (court-circuit).}
+  \end{cases}
+\end{equation}
+Pour M1 : $(4+8) \para 6 = \frac{12 \times 6}{12+6} = 4$, puis $4 + 5 = \SI{9}{\ohm}$.
+
+\paragraph{Saisie de l'élève.} Le moteur accepte \code{2}, \code{2.0}, \code{2,0} et même \code{18/5}. Une valeur $x$ est jugée correcte si
+\begin{equation}
+  |x - v| \le 0{,}01 \cdot |v|,
+\end{equation}
+soit une tolérance relative de \SI{1}{\percent}. L'unité (\si{\ohm} ou \si{\kilo\ohm}) est choisie par l'élève, et toutes les valeurs sont stockées en ohms.
+
+\section{Netlist et analyse nodale}\label{sec:netlist}
+Le pont de Wheatstone (figure~\ref{fig:wheat}) n'est pas un arbre série-parallèle. Pour ce cas, le moteur dispose d'une \textbf{netlist} (nœuds, résistances, fils) et d'un solveur exact par analyse nodale. On injecte un courant de \SI{1}{\ampere} en $A$ et on met $B$ à la masse. On écrit ensuite la loi des nœuds avec la matrice des conductances $G$ :
+\begin{equation}
+  G\,V = I,
+  \qquad
+  G_{ii} = \sum_{k \sim i} \frac{1}{R_{ik}},
+  \qquad
+  G_{ij} = -\sum_{\text{$R$ entre $i$ et $j$}} \frac{1}{R},
+  \qquad
+  I = (1, 0, \dots, 0)^{\top}.
+\end{equation}
+La résistance équivalente vaut alors $\req = V_A / \SI{1}{\ampere} = V_A$. Le système est résolu par élimination de Gauss--Jordan en fractions exactes. Les fils sont fusionnés au préalable par une structure union-find.
+
+\begin{figure}[ht]
+\centering
+\begin{circuitikz}[scale=0.85, transform shape]
+  \draw (0,0) node[ocirc, label=left:$A$] {} -- (1,0) node[circ] {};
+  \draw (1,0) -- (1,1.5) to[R, l=$R_1$] (3,1.5) node[circ, label=above:$C$] {} to[R, l=$R_2$] (5,1.5) -- (5,0) node[circ] {};
+  \draw (1,0) -- (1,-1.5) to[R, l_=$R_3$] (3,-1.5) node[circ, label=below:$D$] {} to[R, l_=$R_4$] (5,-1.5) -- (5,0);
+  \draw (3,1.5) to[R, l=$R_5$] (3,-1.5);
+  \draw (5,0) -- (6,0) node[ocirc, label=right:$B$] {};
+\end{circuitikz}
+\caption{Pont de Wheatstone (gabarit D3).}\label{fig:wheat}
+\end{figure}
+
+\paragraph{Pont équilibré.} Si $\frac{R_1}{R_2} = \frac{R_3}{R_4}$, c'est-à-dire $R_1 R_4 = R_2 R_3$, les points $C$ et $D$ sont au même potentiel. Aucun courant ne traverse $R_5$, que l'on peut donc retirer :
+\begin{equation}
+  \req = (R_1 + R_2) \para (R_3 + R_4).
+\end{equation}
+Exemple de référence : $(2 + 4) \para (3 + 6) = \frac{6 \times 9}{15} = \SI{3.6}{\ohm}$. Les tests vérifient que l'analyse nodale complète, avec $R_5$, donne exactement la même valeur.
+
+\section{Réduction interactive}
+L'élève simplifie le circuit en quatre gestes :
+\begin{enumerate}
+  \item il clique sur deux résistances ou plus ;
+  \item il choisit « En série » ou « En parallèle » ;
+  \item il saisit la valeur équivalente du groupe ;
+  \item si tout est correct, le groupe est remplacé par une seule résistance (par exemple $R_{12}$), avec une petite animation.
+\end{enumerate}
+Il recommence jusqu'à ce qu'il ne reste qu'une résistance : $\req$.
+
+\paragraph{Validation topologique.} Soit $G$ l'ensemble des résistances sélectionnées :
+\begin{itemize}
+  \item un groupe \emph{série} est valide si les éléments de $G$ sont des enfants \emph{consécutifs} d'un même nœud $S$ ;
+  \item un groupe \emph{parallèle} est valide si les éléments de $G$ sont des enfants d'un même nœud $P$ (un sous-ensemble suffit).
+\end{itemize}
+Après chaque fusion, l'arbre est \emph{normalisé} :
+\begin{itemize}
+  \item un nœud à un seul enfant est remplacé par cet enfant ;
+  \item un $S$ dans un $S$, ou un $P$ dans un $P$, est aplati ;
+  \item un fil en série est supprimé.
+\end{itemize}
+
+\paragraph{Actions spéciales} (niveau difficile) :
+\begin{itemize}
+  \item \enquote{Supprimer la résistance court-circuitée} : valide seulement si la résistance a un fil en parallèle ;
+  \item \enquote{Pont équilibré : retirer la résistance centrale} : valide seulement si $R_1 R_4 = R_2 R_3$.
+\end{itemize}
+Les deux boutons sont proposés sur \emph{tous} les exercices difficiles, pour ne pas révéler le piège.
+
+\section{Rendu SVG}
+\paragraph{Layout automatique.} Chaque sous-arbre est transformé en un bloc rectangulaire de largeur $w$ et de hauteur $h$, avec une ligne de connexion à l'ordonnée $m$ :
+\begin{align}
+  \text{série : } & w = \sum_i w_i + g\,(n-1), \quad m = \max_i m_i, \quad h = m + \max_i (h_i - m_i), \\
+  \text{parallèle : } & w = \max_i w_i + 2p, \quad h = \sum_i h_i + v\,(n-1), \quad m = \tfrac12\,(y_1 + y_n),
+\end{align}
+où $y_i$ est la ligne de la branche $i$, et $g$, $p$, $v$ des espacements fixes. Les nœuds électriques sont suivis pendant le placement : ils servent à colorer les nœuds (indice de l'erreur E5) et à placer les points de jonction (au moins trois conducteurs qui se rejoignent).
+
+\paragraph{Variantes de présentation.} Pour empêcher la reconnaissance « par la forme », un même circuit peut être dessiné de plusieurs façons :
+\begin{itemize}
+  \item vertical ou en miroir ;
+  \item avec un ordre des branches mélangé ;
+  \item en parallèle « sur rails » (branches verticales, bornes $A$ et $B$ du même côté) ;
+  \item en série « en serpentin » (un aller, un retour).
+\end{itemize}
+
+\paragraph{Layouts prédéfinis.} Les cas particuliers ont un dessin dédié : pont de Wheatstone, boucle $A$--$C$--$B$--$D$ (mesure entre $C$ et $D$), circuit mixte « à redessiner ». Le réseau en échelle (figure~\ref{fig:ladder}) a un layout récursif qui reste valable à chaque étape de la réduction.
+
+\begin{figure}[ht]
+\centering
+\begin{circuitikz}[scale=0.85, transform shape]
+  \draw (0,2) node[ocirc, label=left:$A$] {} to[R, l=$R_1$] (2,2) node[circ] {} to[R, l=$R_3$] (4,2) node[circ] {} -- (6,2);
+  \draw (2,2) to[R, l=$R_2$] (2,0) node[circ] {};
+  \draw (4,2) to[R, l=$R_4$] (4,0) node[circ] {};
+  \draw (6,2) to[R, l=$R_5$] (6,0);
+  \draw (0,0) node[ocirc, label=left:$B$] {} -- (6,0);
+\end{circuitikz}
+\caption{Réseau en échelle à deux échelons (gabarit D2) : $\req = R_1 + R_2 \para \big(R_3 + R_4 \para R_5\big)$.}\label{fig:ladder}
+\end{figure}
+
+% ============================================================================
+\chapter{La banque d'exercices}\label{ch:banque}
+% ============================================================================
+
+\section{Gabarits}
+Chaque exercice est un \textbf{gabarit}. Il réunit une structure fixe, un générateur de valeurs qui garantit un résultat propre, et la liste des erreurs qu'il teste. Le générateur est pseudo-aléatoire et initialisé par une graine : une même graine redonne exactement le même exercice, ce qui permet de rejouer une tentative.
+
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\bfseries}l l X l}
+  \toprule
+  ID & Niveau & Description & Compétences \\
+  \midrule
+  F1 & facile & 3--4 résistances en série & C1, C2 \\
+  F2 & facile & 3 résistances en parallèle & C1, C3 \\
+  F3 & facile & $n$ résistances identiques en parallèle ($R/n$) & C3 \\
+  F4 & facile & Série ou parallèle dessiné de façon inhabituelle & C1 \\
+  F5 & facile & Même type de circuit avec des valeurs en \si{\kilo\ohm} & C2, C3 \\
+  \midrule
+  M1 & moyen & $(R_1 + R_2) \para R_3$, puis série $R_4$ & C4 \\
+  M2 & moyen & Deux blocs parallèles en série, le tout $\para R_5$ & C4 \\
+  M3 & moyen & $R_1$ en série avec $R_2 \para (R_3 + R_4)$ & C4 \\
+  M4 & moyen & Mixte à deux niveaux dessiné « en désordre » & C4 \\
+  \midrule
+  D1 & difficile & Court-circuit caché & C5 \\
+  D2 & difficile & Réseau en échelle (2--3 échelons) & C5 \\
+  D3 & difficile & Pont de Wheatstone équilibré & C5 \\
+  D4 & difficile & Problème inverse : $\req$ donnée, trouver $R$ & C6 \\
+  D5 & difficile & $\req$ entre deux autres points ($C$ et $D$) & C4, C5 \\
+  D6 & difficile & Circuit mixte complexe (6 résistances) à redessiner & C4, C5 \\
+  \bottomrule
+\end{tabularx}
+\end{center}
+
+\section{Résultats « propres »}
+Une valeur $\frac{n}{d}$ (en ohms) est dite \emph{propre} si elle a au plus une décimale, c'est-à-dire si $d \mid 10$ ($d \in \{1, 2, 5, 10\}$). En \si{\kilo\ohm}, la condition porte sur $\frac{n}{1000\,d}$. Pour les circuits mixtes, on exige que \emph{chaque sous-bloc} soit propre, de sorte que chaque étape de calcul tombe juste.
+
+\paragraph{Construction des parallèles (F2).} Plutôt que de tirer des valeurs au hasard, on choisit une base $B$ (12, 24, 60…) et des diviseurs distincts $k_i$ de $B$. On pose $R_i = B/k_i$, ce qui donne
+\begin{equation}
+  \frac{1}{\req} = \sum_i \frac{k_i}{B}
+  \quad\Longrightarrow\quad
+  \req = \frac{B}{\sum_i k_i}.
+\end{equation}
+On garde la combinaison si $\req$ est propre. Exemple : $B = 12$ et $k = (1,2,3)$ donnent $R = (12, 6, 4)$ et $\req = 12/6 = \SI{2}{\ohm}$.
+
+\paragraph{Circuits mixtes.} Les valeurs sont tirées dans une liste de valeurs usuelles, puis le circuit est accepté si tous ses sous-blocs sont propres et s'il contient au moins trois valeurs différentes (échantillonnage par rejet). Si aucune combinaison n'est trouvée après 4000 essais, l'exemple de référence du gabarit est utilisé.
+
+\paragraph{Réseau en échelle.} L'échelle est construite \emph{depuis l'extrémité}. On tire d'abord une paire $R_a \para R_b$ propre. Ensuite, à chaque échelon, on ajoute une résistance en série et on cherche une résistance d'échelon $r$ telle que $r \para (\dots)$ reste propre.
+
+\paragraph{Problème inverse.} On tire $R$, $R_1$ et $R_s$ tels que $R_p = R \para R_1$ et $\req = R_s + R_p$ soient propres, avec $R$ entier. Exemple de référence : $(R \para 12) + 4 = 7 \Rightarrow R_p = 3 \Rightarrow R = \SI{4}{\ohm}$.
+
+\paragraph{Pas de répétition.} Avant de proposer un exercice, l'application compare ses valeurs à l'historique de l'élève sur ce gabarit. Elle en génère un autre si elles ont déjà été vues.
+
+% ============================================================================
+\chapter{Le diagnostic des erreurs}\label{ch:diag}
+% ============================================================================
+
+\section{Deux sources de diagnostic}
+\begin{enumerate}
+  \item \textbf{Au niveau des étapes} (réduction interactive) : groupe invalide, mauvais type choisi, mauvaise valeur pour un groupe correct.
+  \item \textbf{Au niveau de la réponse finale} (mode « réponse directe », niveau facile) : la réponse est comparée à des \emph{distracteurs}, c'est-à-dire aux réponses fausses typiques calculées automatiquement pour chaque instance.
+\end{enumerate}
+
+\section{Distracteurs}
+Pour une instance de bonne réponse $\req$, le moteur calcule notamment :
+\begin{align}
+  \text{E2 (tout additionné)} \quad & \textstyle\sum_i R_i, \\
+  \text{E3 (oubli d'inverser)} \quad & \text{l'arbre évalué avec } P(\dots) \mapsto \textstyle\sum 1/\req(c), \\
+  \text{E4 (produit/somme sur 3)} \quad & P(R_1,R_2,R_3) \mapsto \dfrac{R_1 R_2 R_3}{R_1 + R_2 + R_3}, \\
+  \text{E10 (unité)} \quad & 1000\,\req \ \text{et}\ \req/1000.
+\end{align}
+S'y ajoutent des distracteurs propres à certains gabarits :
+\begin{itemize}
+  \item E5 : des \emph{regroupements} fautifs obtenus par mutation de l'arbre (un élément sorti d'un bloc parallèle, une branche aplatie…) ;
+  \item E6 : le court-circuit ignoré ;
+  \item E7 : la résistance centrale du pont prise en compte ;
+  \item E8 : l'échelle calculée depuis la borne $A$ ;
+  \item E11 : les équations mal posées du problème inverse, par exemple $R = R_p$, $R \para R_1 = \req$, ou une erreur de signe $\frac1R = \frac1{R_p} + \frac1{R_1}$.
+\end{itemize}
+
+\paragraph{Exemple (M1, bonne réponse \SI{9}{\ohm}).}
+\begin{center}
+\begin{tabular}{ll}
+  \toprule
+  Réponse & Diagnostic \\
+  \midrule
+  \SI{23}{\ohm} & E2 — tout additionné : $4 + 8 + 6 + 5$ \\
+  \SI{5.25}{\ohm} & E3 — oubli d'inverser : $\frac1{12} + \frac16 + 5$ \\
+  \SI{12.43}{\ohm} & E5 — mauvais regroupement : $4 + (8 \para 6) + 5$ \\
+  autre & E0 si la réponse arrive en moins de \SI{10}{\second}, sinon résolution par étapes \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\section{Diagnostic d'une étape}
+L'algorithme~\ref{algo:diag} résume le diagnostic du choix de type pour un groupe $G$ de résistances.
+
+\begin{algorithm}[ht]
+\caption{Diagnostic du type choisi pour un groupe}\label{algo:diag}
+\KwIn{état du circuit, groupe $G$, type choisi $t \in \{S, P\}$}
+\KwOut{valide, ou code d'erreur}
+\eIf{le circuit est un pont (netlist)}{
+  \lIf{$R_5 \in G$}{\Return E7}
+  \Return E5\;
+}{
+  \lIf{une résistance de $G$ est court-circuitée}{\Return E6}
+  \lIf{$G$ est un groupe valide de type $t$}{\Return valide}
+  \lIf{$G$ est fait d'enfants du même nœud, mais de l'autre type}{\Return E1}
+  \lIf{échelle et $G$ contient une résistance proche de $A$}{\Return E8}
+  \Return E5\;
+}
+\end{algorithm}
+
+Une fois le groupe validé, la valeur saisie est comparée à la valeur exacte. En cas d'écart, le code dépend de la valeur obtenue :
+\begin{itemize}
+  \item la somme des résistances d'un groupe parallèle donne E2 ;
+  \item la somme des inverses donne E3 ;
+  \item le produit/somme sur trois résistances donne E4 ;
+  \item un facteur 1000 donne E10 ;
+  \item toute autre valeur donne E9 (bonne méthode, erreur de calcul).
+\end{itemize}
+
+\section{Base des erreurs et aide associée}
+\begin{center}
+\small
+\begin{longtable}{>{\bfseries}l p{4.2cm} p{6.3cm} l}
+  \toprule
+  Code & Erreur & Indice (1\textsuperscript{re} fois) & Comp. \\
+  \midrule
+  \endhead
+  E0 & Réponse au hasard & « Résous-le étape par étape pour qu'on voie ton raisonnement. » & — \\
+  E1 & Confusion série / parallèle & « Suis le courant : se divise-t-il ou passe-t-il par un seul chemin ? » & C1 \\
+  E2 & Parallèle additionné comme série & « $\req$ doit-elle être plus grande ou plus petite que la plus petite résistance ? » & C3 \\
+  E3 & Oubli d'inverser $1/\req$ & « As-tu calculé $\req$ ou $\frac{1}{\req}$ ? » & C3 \\
+  E4 & Produit/somme sur 3 résistances & « Cette formule ne marche que pour 2 résistances. » & C3 \\
+  E5 & Mauvais regroupement & « Ces résistances sont-elles entre les mêmes deux nœuds ? » & C4 \\
+  E6 & Court-circuit non vu & « Regarde le fil : que fait le courant face à un chemin sans résistance ? » & C5 \\
+  E7 & Pont équilibré non reconnu & « Compare $\frac{R_1}{R_2}$ et $\frac{R_3}{R_4}$. » & C5 \\
+  E8 & Échelle prise par le mauvais bout & « Commence par l'extrémité la plus éloignée de A. » & C5 \\
+  E9 & Erreur de calcul (fractions) & « Ta méthode est juste, revérifie le calcul des fractions. » & C2/C3 \\
+  E10 & Erreur d'unité & « Vérifie l'unité : \si{\ohm} ou \si{\kilo\ohm} ? » & C2 \\
+  E11 & Équation mal posée (inverse) & « Que reste-t-il pour la partie parallèle après avoir retiré la résistance en série ? » & C6 \\
+  \bottomrule
+\end{longtable}
+\end{center}
+Chaque erreur (sauf E0) est associée à une micro-vidéo de 30 à 45 secondes, dont le script est déjà rédigé. Tant que la vidéo n'existe pas, une carte « Vidéo à venir » affiche son script et sa formule clé.
+
+% ============================================================================
+\chapter{Modèle de l'apprenant et adaptation}\label{ch:adapt}
+% ============================================================================
+
+\section{Modèle de l'apprenant}
+Pour chaque élève, le système maintient :
+\begin{itemize}
+  \item une maîtrise $c_k \in [0, 100]$ pour chaque compétence C1 à C6 ;
+  \item le nombre total d'occurrences de chaque erreur et, pour piloter l'aide, un compteur $s_e$ de la même erreur non encore corrigée ;
+  \item le niveau courant, la série de réussites en cours et une file de révisions espacées ;
+  \item l'historique complet des tentatives : valeurs, étapes horodatées, erreurs, aides, temps.
+\end{itemize}
+Les mises à jour suivent les règles :
+\begin{align}
+  c_k &\leftarrow \min(100,\ c_k + 15) && \text{après une réussite travaillant } C_k,\\
+  c_k &\leftarrow \max(0,\ c_k - 10) && \text{après une erreur liée à } C_k.
+\end{align}
+
+\section{Règles d'adaptation}
+\begin{center}
+\small
+\begin{tabularx}{\textwidth}{>{\raggedright}p{5.5cm} X}
+  \toprule
+  Situation & Action \\
+  \midrule
+  3 réussites d'affilée dans le niveau, dont au moins 2 sans indice & Passage au niveau suivant \\
+  1\textsuperscript{re} occurrence d'une erreur ($s_e = 1$) & Indice lié au code, puis nouvel essai sur le même exercice \\
+  2\textsuperscript{e} occurrence ($s_e = 2$) & Micro-vidéo de l'erreur, puis exercice de remédiation (même gabarit, nouvelles valeurs) \\
+  3\textsuperscript{e} occurrence ($s_e = 3$) & Alerte au professeur et retour au niveau précédent sur la compétence concernée \\
+  Réussite très longue & Un exercice de plus dans le niveau avant de passer \\
+  Erreur corrigée & Le même gabarit revient 2 à 3 exercices plus tard (révision espacée) \\
+  Choix de l'exercice suivant & Gabarit travaillant la compétence la plus faible du niveau \\
+  \bottomrule
+\end{tabularx}
+\end{center}
+
+\paragraph{Passage de niveau.} Soit $r$ le nombre de réussites d'affilée, $r_0$ le nombre d'entre elles obtenues sans indice, et $x \in \{0, 1\}$ l'exercice supplémentaire exigé après une réussite très lente. L'élève passe au niveau suivant si
+\begin{equation}
+  r \ge 3 + x \quad\text{et}\quad r_0 \ge 2.
+\end{equation}
+
+\paragraph{Erreur corrigée.} Le compteur $s_e$ est remis à zéro lorsque l'élève réussit un exercice qui teste l'erreur $e$ sans la commettre, ou après l'alerte.
+
+\paragraph{Choix de l'exercice suivant.}
+\begin{enumerate}
+  \item Si une révision arrive à échéance, son gabarit est proposé.
+  \item Sinon, dans \SI{75}{\percent} des cas, l'exercice travaille la compétence la plus faible du niveau (ou la compétence ciblée après une alerte). Dans les autres cas, il est tiré au hasard dans le niveau, pour garder de la variété.
+\end{enumerate}
+Le même gabarit n'est jamais proposé deux fois de suite, sauf en remédiation.
+
+\section{Constantes}
+Toutes les constantes sont regroupées dans \code{src/config/adaptive.ts} pour pouvoir les ajuster lors de l'expérimentation :
+\begin{center}
+\small
+\begin{tabular}{lr}
+  \toprule
+  Paramètre & Valeur \\
+  \midrule
+  Réussites d'affilée pour passer de niveau & 3 \\
+  Dont sans indice (minimum) & 2 \\
+  Seuil « réussite très longue » (facile / moyen / difficile) & \SIlist{240;420;600}{\second} \\
+  Gain / perte de maîtrise & $+15$ / $-10$ \\
+  Paliers d'aide (indice / vidéo / alerte) & 1 / 2 / 3 \\
+  Délai de révision espacée & 2 à 3 exercices \\
+  Probabilité de cibler la compétence la plus faible & 0,75 \\
+  Seuil de réponse au hasard (E0) & \SI{10}{\second} \\
+  Tolérance relative sur les valeurs & \SI{1}{\percent} \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================================
+\chapter{L'espace professeur}\label{ch:prof}
+% ============================================================================
+
+\section{Tableau de bord}
+\begin{itemize}
+  \item \textbf{Vue classe} : pour chaque élève, le niveau, les compétences C1 à C6 en pastilles de couleur, la dernière activité et une éventuelle alerte. L'ordre est alphabétique, sans aucun classement.
+  \item \textbf{Erreurs fréquentes} : pour chaque code $e$, la part des élèves concernés,
+  \begin{equation}
+    p_e = \frac{\#\{\text{élèves ayant commis } e \text{ au moins une fois}\}}{\#\{\text{élèves de la classe}\}} \times 100.
+  \end{equation}
+  \item \textbf{Alertes} : par exemple « Youssef bloqué sur E6 (court-circuit non vu) — 3 échecs ».
+\end{itemize}
+
+\section{Fiche élève et actions}
+La fiche d'un élève présente :
+\begin{itemize}
+  \item l'historique détaillé de ses tentatives (valeurs, étapes horodatées, erreurs) ;
+  \item ses erreurs répétées, le temps passé et les vidéos revues ;
+  \item sa courbe de progression (maîtrise moyenne après chaque tentative).
+\end{itemize}
+Le professeur peut :
+\begin{itemize}
+  \item débloquer l'élève ;
+  \item le faire passer au niveau suivant ou revenir au précédent ;
+  \item réinitialiser sa progression (l'historique est conservé pour l'expérimentation) ;
+  \item lui laisser un message, qui s'affiche sur son accueil.
+\end{itemize}
+
+\section{Export pour l'expérimentation}
+Deux exports CSV sont proposés. Ils utilisent le séparateur « ; » et un encodage UTF-8 avec BOM, pour être compatibles avec Excel en français :
+\begin{itemize}
+  \item \textbf{tentatives} : une ligne par tentative (élève, gabarit, niveau, mode, résultat, erreurs, nombre d'étapes, durée, aides, valeurs, compétences après la tentative…) ;
+  \item \textbf{synthèse} : une ligne par élève (niveau, C1 à C6, taux de réussite, temps total, nombre d'occurrences de chaque erreur E0 à E11).
+\end{itemize}
+
+% ============================================================================
+\chapter{Validation}\label{ch:valid}
+% ============================================================================
+
+\section{Tests automatisés}
+La suite Vitest compte 89 tests répartis en 7 fichiers. Elle couvre :
+\begin{itemize}
+  \item \textbf{fractions et saisie} : réduction, parallèle exact, tolérance de \SI{1}{\percent}, formats \code{2}, \code{2.0}, \code{2,0} et \code{18/5} ;
+  \item \textbf{exemples de référence} : chaque exemple du cahier des charges donne exactement le résultat attendu (tableau~\ref{tab:ref}) ;
+  \item \textbf{générateurs} : chaque gabarit produit \textbf{1000 instances} valides, avec un $\req$ propre, sans distracteur égal à la réponse, et dont l'énoncé ne mentionne jamais « série » ni « parallèle » ;
+  \item \textbf{netlist} : l'analyse nodale donne le même résultat que l'arbre, et le pont non équilibré est bien détecté ;
+  \item \textbf{réduction} : chaque gabarit est réduit automatiquement jusqu'à une seule résistance égale à $\req$, et le schéma est redessiné à chaque étape ;
+  \item \textbf{diagnostic} : M1 donne bien \SI{23}{\ohm} $\to$ E2, \SI{5.25}{\ohm} $\to$ E3 et \SI{12.43}{\ohm} $\to$ E5 ; E1, E4, E6, E7, E8, E9, E10 et E11 sont aussi vérifiés ;
+  \item \textbf{adaptation} : passage de niveau, exercice supplémentaire après une réussite lente, enchaînement indice $\to$ vidéo $\to$ alerte, révision espacée, compétence la plus faible ;
+  \item \textbf{formules} : toutes les formules \LaTeX{} du contenu pédagogique sont valides pour KaTeX ;
+  \item \textbf{données} : données de démonstration, connexion, statistiques du tableau de bord, export CSV.
+\end{itemize}
+
+\begin{table}[ht]
+\centering
+\caption{Exemples de référence vérifiés par les tests.}\label{tab:ref}
+\small
+\begin{tabular}{lll}
+  \toprule
+  Gabarit & Calcul & Résultat \\
+  \midrule
+  F1 & $10 + 22 + 47 + 21$ & \SI{100}{\ohm} \\
+  F2 & $12 \para 6 \para 4 = \left(\frac1{12} + \frac2{12} + \frac3{12}\right)^{-1}$ & \SI{2}{\ohm} \\
+  F3 & $4 \times \SI{20}{\ohm}$ en parallèle & \SI{5}{\ohm} \\
+  M1 & $(4 + 8) \para 6 + 5$ & \SI{9}{\ohm} \\
+  M2 & $\big((6 \para 3) + (12 \para 4)\big) \para 20$ & \SI{4}{\ohm} \\
+  D1 & $6 \para 3$, avec \SI{100}{\ohm} court-circuitée & \SI{2}{\ohm} \\
+  D2 & $2 + 4 \para \big(2 + (4 \para 4)\big)$ & \SI{4}{\ohm} \\
+  D3 & $(2 + 4) \para (3 + 6)$, \SI{10}{\ohm} centrale retirée & \SI{3.6}{\ohm} \\
+  D4 & $(R \para 12) + 4 = 7$ & $R = \SI{4}{\ohm}$ \\
+  \bottomrule
+\end{tabular}
+\end{table}
+
+\section{Données de démonstration}
+La classe de démonstration compte huit élèves fictifs. Leurs historiques ne sont pas écrits à la main : ils sont obtenus en \emph{simulant le vrai moteur adaptatif}. Chaque profil a un taux de réussite par niveau et des erreurs favorites. Le tableau de bord présente donc des données cohérentes avec les règles de l'application, y compris une alerte active, comme dans l'exemple du cahier des charges.
+
+% ============================================================================
+\chapter{Limites et perspectives}\label{ch:persp}
+% ============================================================================
+
+\section{Limites actuelles}
+\begin{itemize}
+  \item Les vidéos (introduction et micro-vidéos) restent à produire. Leurs scripts sont rédigés et les emplacements prêts : il suffit de renseigner le champ \code{videoUrl}.
+  \item En V1, les données sont stockées dans le navigateur. Elles ne sont donc pas partagées entre plusieurs postes.
+  \item Les scripts de la vidéo d'introduction et les messages de feedback sont des propositions à valider par l'équipe pédagogique.
+  \item Les seuils d'adaptation sont des valeurs initiales raisonnables, qui restent à calibrer sur le terrain.
+\end{itemize}
+
+\section{Perspectives}
+\begin{itemize}
+  \item \textbf{V2 Firebase} : authentification et base Firestore, en remplaçant uniquement l'implémentation du \code{Repository}.
+  \item \textbf{Expérimentation} : comparaison d'un groupe utilisant \ohmigo{} et d'un groupe témoin (pré-test / post-test), à partir des exports CSV.
+  \item \textbf{Calibrage} du modèle de l'apprenant à partir des données réelles, par exemple en ajustant les gains et les pertes par compétence.
+  \item \textbf{Autres leçons} (loi d'Ohm, puissance, diviseur de tension), une fois celle-ci validée en classe.
+\end{itemize}
+
+% ============================================================================
+\appendix
+\chapter{Installation et commandes}
+% ============================================================================
+Prérequis : Node.js 22.22 ou plus récent.
+\begin{lstlisting}[language=bash]
+npm install          # installation des dépendances
+npm run dev          # application sur http://localhost:5173
+npm test             # tests automatisés
+npm run build        # version de production (dossier dist/)
+\end{lstlisting}
+Comptes de démonstration : classe \code{1STE-A} (par exemple \emph{Youssef Amrani}) et code PIN professeur \code{1234}.
+
+\chapter{Arborescence du code}
+\begin{lstlisting}
+src/
+  config/adaptive.ts         constantes d'adaptation
+  content/                   contenu pédagogique validé
+    errors.ts                base des erreurs E0-E11
+    videos.ts                vidéo d'introduction (segments, scripts)
+    feedback.ts              feedback et indices généraux
+    templates/               gabarits F1-F5, M1-M4, D1-D6
+  engine/                    moteur (TypeScript pur, testé)
+    fraction.ts              fractions exactes
+    tree.ts                  arbre série-parallèle, fusion des groupes
+    netlist.ts               netlist et analyse nodale
+    layout.ts                calcul des schémas SVG
+    diagnostic.ts            distracteurs et diagnostic
+    adaptive.ts              modèle de l'apprenant, adaptation
+    math.ts                  formules LaTeX (KaTeX)
+  data/                      repository, localStorage, démo, statistiques
+  components/, pages/        interface React
+\end{lstlisting}
+
+\end{document}
